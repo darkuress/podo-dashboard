@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Podo Pro Dashboard v19</title>
+    <title>Podo Pro Dashboard v20</title>
     <style>
         :root {
             --bg: #0b0e14;
@@ -42,12 +42,13 @@
             flex-direction: column;
             resize: both;
             overflow: auto;
-            height: 200px;
+            min-height: 200px;
             position: relative;
         }
 
-        /* --- HEIGHT OVERRIDES --- */
+        /* Fixed heights as requested */
         #w-clock, #w-world-news, #w-k-news { height: 300px; }
+        #w-weather, #w-soccer, #w-todo, #w-stocks { height: 400px; }
 
         .widget-header {
             display: flex;
@@ -89,7 +90,6 @@
 
         input { background: #000; border: 1px solid #333; border-radius: 10px; color: #fff; padding: 10px; outline: none; flex: 1; font-size: 0.85rem; }
         
-        /* --- TABS --- */
         .tabs { display: flex; gap: 4px; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; }
         .tabs::-webkit-scrollbar { display: none; }
         .tab-btn { background: none; border: none; color: var(--gray); cursor: pointer; padding: 5px 8px; font-size: 0.7rem; border-radius: 6px; white-space: nowrap; }
@@ -97,25 +97,21 @@
         .tab-content { display: none; overflow-y: auto; flex: 1; }
         .tab-content.active { display: block; }
 
-        /* --- CLOCK --- */
         .local-clock-display { font-size: 2.8rem; font-weight: 800; text-align: center; margin: 10px 0 20px 0; color: var(--primary); font-variant-numeric: tabular-nums; }
         .clock-item { border-bottom: 1px solid var(--glass); padding: 8px 0; display: flex; justify-content: space-between; align-items: center; }
         .clock-city { font-weight: 600; font-size: 0.75rem; color: var(--gray); }
         .clock-time { color: var(--text); font-family: monospace; font-size: 0.9rem; }
 
-        /* --- TABLES --- */
         table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
         th { text-align: left; color: var(--gray); font-size: 0.6rem; padding-bottom: 10px; text-transform: uppercase; }
         td { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
         .rank { color: var(--primary); font-weight: bold; width: 20px; }
 
-        /* --- NEWS FIX --- */
         .news-item { margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .news-item a { color: #ffffff !important; text-decoration: none; display: block; line-height: 1.6; font-size: 0.85rem; }
         .news-item a:visited { color: #ffffff !important; }
         .news-item a:hover { color: var(--primary) !important; }
 
-        /* --- STOCKS --- */
         .stock-tag { display: inline-flex; align-items: center; background: var(--glass); padding: 4px 10px; border-radius: 20px; margin: 2px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1); }
         
         .todo-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; }
@@ -158,7 +154,7 @@
         </div>
 
         <!-- 3. FOOTBALL CENTER -->
-        <div class="widget" draggable="true" id="w-soccer" style="min-height:500px;">
+        <div class="widget" draggable="true" id="w-soccer">
             <div class="widget-header"><span class="section-title">Football Center ⚽</span></div>
             <div class="tabs">
                 <button class="tab-btn active" onclick="openTab(event, 'tab-pl')">PL Table</button>
@@ -172,38 +168,37 @@
             <div id="tab-lls" class="tab-content"><table><thead><tr><th>#</th><th>Player (Team)</th><th style="text-align:right">G</th></tr></thead><tbody id="lls-body"></tbody></table></div>
         </div>
 
-        <!-- 4. WORLD NEWS (TABBED) -->
+        <!-- 4. WORLD NEWS -->
         <div class="widget" draggable="true" id="w-world-news">
             <div class="widget-header"><span class="section-title">World News</span><button class="btn" onclick="upWorldNews()">↻</button></div>
             <div class="tabs">
-                <button class="tab-btn active" onclick="openNewsTab(event, 'wn-gen', 'en')">General</button>
-                <button class="tab-btn" onclick="openNewsTab(event, 'wn-eco', 'en', 'BUSINESS')">Economy</button>
-                <button class="tab-btn" onclick="openNewsTab(event, 'wn-spo', 'en', 'SPORTS')">Sports</button>
-                <button class="tab-btn" onclick="openNewsTab(event, 'wn-ent', 'en', 'ENTERTAINMENT')">Entertainment</button>
+                <button class="tab-btn active" onclick="openNewsTab(event, 'wn-list', 'en', '')">General</button>
+                <button class="tab-btn" onclick="openNewsTab(event, 'wn-list', 'en', 'BUSINESS')">Economy</button>
+                <button class="tab-btn" onclick="openNewsTab(event, 'wn-list', 'en', 'SPORTS')">Sports</button>
+                <button class="tab-btn" onclick="openNewsTab(event, 'wn-list', 'en', 'ENTERTAINMENT')">Entertainment</button>
             </div>
             <div id="wn-list" style="overflow-y:auto; flex:1;"></div>
         </div>
 
-        <!-- 5. KOREAN NEWS (TABBED) -->
+        <!-- 5. KOREAN NEWS -->
         <div class="widget" draggable="true" id="w-k-news">
             <div class="widget-header"><span class="section-title">Korean News</span><button class="btn" onclick="upKNews()">↻</button></div>
             <div class="tabs">
-                <button class="tab-btn active" onclick="openNewsTab(event, 'kn-gen', 'ko')">General</button>
-                <button class="tab-btn" onclick="openNewsTab(event, 'kn-eco', 'ko', 'BUSINESS')">Economy</button>
-                <button class="tab-btn" onclick="openNewsTab(event, 'kn-spo', 'ko', 'SPORTS')">Sports</button>
-                <button class="tab-btn" onclick="openNewsTab(event, 'kn-ent', 'ko', 'ENTERTAINMENT')">Entertainment</button>
+                <button class="tab-btn active" onclick="openNewsTab(event, 'kn-list', 'ko', '')">General</button>
+                <button class="tab-btn" onclick="openNewsTab(event, 'kn-list', 'ko', 'BUSINESS')">Economy</button>
+                <button class="tab-btn" onclick="openNewsTab(event, 'kn-list', 'ko', 'SPORTS')">Sports</button>
+                <button class="tab-btn" onclick="openNewsTab(event, 'kn-list', 'ko', 'ENTERTAINMENT')">Entertainment</button>
             </div>
             <div id="kn-list" style="overflow-y:auto; flex:1;"></div>
         </div>
 
         <!-- 6. STOCKS -->
-        <div class="widget" draggable="true" id="w-stocks" style="min-height:450px;">
+        <div class="widget" draggable="true" id="w-stocks">
             <div class="widget-header"><span class="section-title">Stocks 📈</span></div>
             <div style="display:flex; gap:5px; margin-bottom:10px;">
                 <input type="text" id="stock-input" placeholder="Symbol" list="stocks-list" oninput="this.value = this.value.toUpperCase()">
                 <datalist id="stocks-list">
                     <option value="NASDAQ:AAPL"><option value="NASDAQ:TSLA"><option value="NASDAQ:NVDA"><option value="NASDAQ:GOOGL"><option value="NASDAQ:NFLX">
-                    <option value="NASDAQ:MSFT"><option value="NASDAQ:AMZN"><option value="NASDAQ:META"><option value="NYSE:BABA">
                 </datalist>
                 <button class="btn" onclick="addStock()">+</button>
             </div>
@@ -286,12 +281,12 @@
             }
         }
 
-        // FOOTBALL CENTER (15 ROWS)
+        // FOOTBALL DATA (UPDATED 2026-02-09)
         function upSports() {
-            const pl = [{r:1,t:'Arsenal',w:16,d:5,l:3,p:53},{r:2,t:'Man City',w:14,d:5,l:5,p:47},{r:3,t:'Aston Villa',w:14,d:4,l:6,p:46},{r:4,t:'Man Utd',w:11,d:8,l:5,p:41},{r:5,t:'Chelsea',w:11,d:7,l:6,p:40},{r:6,t:'Liverpool',w:11,d:6,l:7,p:39},{r:7,t:'Brentford',w:11,d:3,l:10,p:36},{r:8,t:'Sunderland',w:9,d:9,l:6,p:36},{r:9,t:'Fulham',w:10,d:4,l:10,p:34},{r:10,t:'Everton',w:9,d:7,l:8,p:34},{r:11,t:'Newcastle',w:9,d:6,l:9,p:33},{r:12,t:'Bournemouth',w:8,d:9,l:7,p:33},{r:13,t:'Brighton',w:7,d:10,l:7,p:31},{r:14,t:'Tottenham',w:7,d:8,l:9,p:29},{r:15,t:'Crystal Palace',w:7,d:8,l:9,p:29}];
-            const ll = [{r:1,t:'Barcelona',w:18,d:1,l:3,p:55},{r:2,t:'Real Madrid',w:17,d:3,l:2,p:54},{r:3,t:'Atleti',w:13,d:6,l:3,p:45},{r:4,t:'Villarreal',w:13,d:3,l:5,p:42},{r:5,t:'Real Betis',w:9,d:8,l:5,p:35},{r:6,t:'Espanyol',w:10,d:4,l:8,p:34},{r:7,t:'Celta Vigo',w:8,d:9,l:6,p:33},{r:8,t:'Osasuna',w:8,d:5,l:10,p:29},{r:9,t:'Sociedad',w:7,d:7,l:8,p:28},{r:10,t:'Alavés',w:7,d:4,l:11,p:25},{r:11,t:'Bilbao',w:7,d:4,l:11,p:25},{r:12,t:'Girona',w:6,d:7,l:9,p:25},{r:13,t:'Elche',w:5,d:9,l:8,p:24},{r:14,t:'Mallorca',w:6,d:6,l:10,p:24},{r:15,t:'Sevilla',w:7,d:3,l:12,p:24}];
-            const pls = [{r:1,n:'Haaland',m:'City',g:20},{r:2,n:'Thiago',m:'BRE',g:16},{r:3,n:'Semenyo',m:'City',g:12},{r:4,n:'Ekitiké',m:'LFC',g:10},{r:5,n:'Calvert-Lewin',m:'Leeds',g:10},{r:6,n:'João Pedro',m:'CFC',g:9},{r:7,n:'H. Wilson',m:'Fulham',g:8},{r:8,n:'O. Watkins',m:'Villa',g:8},{r:9,n:'J. Mateta',m:'Palace',g:8},{r:10,n:'D. Welbeck',m:'BHA',g:8},{r:11,n:'P. Foden',m:'City',g:7},{r:12,n:'Richarlison',m:'Spurs',g:7},{r:13,n:'V. Gyökeres',m:'ARS',g:6},{r:14,n:'M. Cunha',m:'MUFC',g:6},{r:15,n:'Pedro Neto',m:'CFC',g:5}];
-            const lls = [{r:1,n:'Mbappé',m:'RMA',g:22},{r:2,n:'V. Muriqi',m:'MLL',g:15},{r:3,n:'F. Torres',m:'BAR',g:12},{r:4,n:'Budimir',m:'OSA',g:11},{r:5,n:'Yamal',m:'BAR',g:9},{r:6,n:'Lewandowski',m:'BAR',g:9},{r:7,n:'B. Iglesias',m:'CEL',g:9},{r:8,n:'Raphinha',m:'BAR',g:8},{r:9,n:'Oyarzabal',m:'RSO',g:8},{r:10,n:'Moleiro',m:'VIL',g:8},{r:11,n:'Hugo Duro',m:'VAL',g:7},{r:12,n:'A. Sørloth',m:'ATM',g:7},{r:13,n:'de Frutos',m:'RAY',g:7},{r:14,n:'Vinícius Jr',m:'RMA',g:6},{r:15,n:'Dani Olmo',m:'BAR',g:6}];
+            const pl = [{r:1,t:'Arsenal',w:17,d:5,l:3,p:56},{r:2,t:'Man City',w:15,d:5,l:5,p:50},{r:3,t:'Aston Villa',w:14,d:5,l:6,p:47},{r:4,t:'Man Utd',w:12,d:8,l:5,p:44},{r:5,t:'Chelsea',w:12,d:7,l:6,p:43},{r:6,t:'Liverpool',w:11,d:6,l:8,p:39},{r:7,t:'Brentford',w:12,d:3,l:10,p:39},{r:8,t:'Everton',w:10,d:7,l:8,p:37},{r:9,t:'Sunderland',w:9,d:9,l:7,p:36},{r:10,t:'Fulham',w:10,d:4,l:11,p:34},{r:11,t:'Bournemouth',w:8,t:10,l:7,p:34},{r:12,t:'Newcastle',w:9,d:6,l:10,p:33},{r:13,t:'Palace',w:8,d:8,l:9,p:32},{r:14,t:'Brighton',w:7,d:10,l:8,p:31},{r:15,t:'Tottenham',w:7,d:8,l:10,p:29}];
+            const ll = [{r:1,t:'Barcelona',w:19,d:1,l:3,p:58},{r:2,t:'Real Madrid',w:18,d:3,l:2,p:57},{r:3,t:'Villarreal',w:14,d:3,l:5,p:45},{r:4,t:'Atleti',w:13,d:6,l:4,p:45},{r:5,t:'Real Betis',w:10,d:8,l:5,p:38},{r:6,t:'Espanyol',w:10,d:4,l:9,p:34},{r:7,t:'Celta Vigo',w:8,d:9,l:6,p:33},{r:8,t:'Sociedad',w:8,d:7,l:8,p:31},{r:9,t:'Osasuna',w:8,d:5,l:10,p:29},{r:10,t:'Bilbao',w:8,d:4,l:11,p:28},{r:11,t:'Getafe',w:7,d:5,l:11,p:26},{r:12,t:'Girona',w:6,d:8,l:9,p:26},{r:13,t:'Sevilla',w:7,d:4,l:12,p:25},{r:14,t:'Alavés',w:7,d:4,l:12,p:25},{r:15,t:'Elche',w:5,d:9,l:9,p:24}];
+            const pls = [{r:1,n:'Haaland',m:'City',g:21},{r:2,n:'Thiago',m:'BRE',g:17},{r:3,n:'Semenyo',m:'City',g:12},{r:4,n:'Ekitiké',m:'LFC',g:10},{r:5,n:'Calvert-Lewin',m:'Leeds',g:10},{r:6,n:'Bruno G.',m:'NEW',g:9},{r:7,n:'Mbeumo',m:'MUFC',g:9},{r:8,n:'João Pedro',m:'CFC',g:9},{r:9,n:'Rogers',m:'Villa',g:8},{r:10,n:'Wilson',m:'Fulham',g:8},{r:11,n:'Fernández',m:'CFC',g:8},{r:12,n:'Bowen',m:'WHU',g:8},{r:13,n:'Watkins',m:'Villa',g:8},{r:14,n:'Kroupi',m:'BOU',g:8},{r:15,n:'Welbeck',m:'BHA',g:8}];
+            const lls = [{r:1,n:'Mbappé',m:'RMA',g:23},{r:2,n:'Muriqi',m:'MLL',g:15},{r:3,n:'F. Torres',m:'BAR',g:12},{r:4,n:'Budimir',m:'OSA',g:11},{r:5,n:'Yamal',m:'BAR',g:10},{r:6,n:'Lewandowski',m:'BAR',g:10},{r:7,n:'Oyarzabal',m:'RSO',g:9},{r:8,n:'Borja I.',m:'CEL',g:9},{r:9,n:'Raphinha',m:'BAR',g:8},{r:10,n:'Moleiro',m:'VIL',g:8},{r:11,n:'Hernández',m:'Betis',g:8},{r:12,n:'Alvarez',m:'ATM',g:7},{r:13,n:'de Frutos',m:'RAY',g:7},{r:14,n:'Moreno',m:'VIL',g:7},{r:15,n:'Sørloth',m:'ATM',g:7}];
             
             const render = (id, d, f) => { const el = document.getElementById(id); if(el) el.innerHTML = d.map(f).join(''); };
             render('pl-body', pl, s => `<tr><td class="rank">${s.r}</td><td>${s.t}</td><td>${s.w}-${s.d}-${s.l}</td><td style="text-align:right">${s.p}</td></tr>`);
@@ -301,11 +296,10 @@
         }
 
         // NEWS FETCHING
-        async function openNewsTab(e, n, lang, topic = "") {
+        async function openNewsTab(e, listId, lang, topic = "") {
             let tb = e.target.parentElement.querySelectorAll(".tab-btn");
             tb.forEach(b => b.className = b.className.replace(" active", ""));
             e.target.className += " active";
-            const listId = lang === 'ko' ? 'kn-list' : 'wn-list';
             fetchNews(listId, lang, topic);
         }
 
@@ -343,7 +337,10 @@
         const todoInput = document.getElementById('todo-input');
         if(todoInput) todoInput.onkeypress = (e) => { if(e.key === 'Enter' && e.target.value.trim()){ todos.push({text:e.target.value.trim(), done:false}); e.target.value=''; renderT(); }};
 
-        loadOrder(); renderClocks(); renderStocks(); updateWeather(); upSports(); fetchNews('wn-list', 'en'); fetchNews('kn-list', 'ko'); renderT();
+        function upWorldNews() { fetchNews('wn-list', 'en'); }
+        function upKNews() { fetchNews('kn-list', 'ko'); }
+
+        loadOrder(); renderClocks(); renderStocks(); updateWeather(); upSports(); upWorldNews(); upKNews(); renderT();
     </script>
 </body>
 </html>
