@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podo Pro Dashboard v19</title>
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --card: #161b22;
+            --primary: #00ffcc;
+            --text: #f0f6fc;
+            --gray: #8b949e;
+            --glass: rgba(255, 255, 255, 0.05);
+            --danger: #ff4d4d;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0;
+            padding: 15px;
+            box-sizing: border-box;
+            min-height: 100vh;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            grid-auto-rows: min-content;
+            gap: 15px;
+        }
+
+        .widget {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            flex-direction: column;
+            resize: both;
+            overflow: auto;
+            height: 200px;
+            position: relative;
+        }
+
+        /* --- HEIGHT OVERRIDES --- */
+        #w-clock, #w-world-news, #w-k-news { height: 300px; }
+
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+            cursor: grab;
+            padding: 8px;
+            background: var(--glass);
+            border-radius: 12px;
+        }
+
+        .section-title {
+            margin: 0;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            pointer-events: none;
+        }
+
+        .btn {
+            background: var(--glass);
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .widget.dragging { opacity: 0.5; border: 2px dashed var(--primary); }
+
+        input { background: #000; border: 1px solid #333; border-radius: 10px; color: #fff; padding: 10px; outline: none; flex: 1; font-size: 0.85rem; }
+        
+        /* --- TABS --- */
+        .tabs { display: flex; gap: 4px; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab-btn { background: none; border: none; color: var(--gray); cursor: pointer; padding: 5px 8px; font-size: 0.7rem; border-radius: 6px; white-space: nowrap; }
+        .tab-btn.active { color: var(--primary); background: var(--glass); font-weight: bold; }
+        .tab-content { display: none; overflow-y: auto; flex: 1; }
+        .tab-content.active { display: block; }
+
+        /* --- CLOCK --- */
+        .local-clock-display { font-size: 2.8rem; font-weight: 800; text-align: center; margin: 10px 0 20px 0; color: var(--primary); font-variant-numeric: tabular-nums; }
+        .clock-item { border-bottom: 1px solid var(--glass); padding: 8px 0; display: flex; justify-content: space-between; align-items: center; }
+        .clock-city { font-weight: 600; font-size: 0.75rem; color: var(--gray); }
+        .clock-time { color: var(--text); font-family: monospace; font-size: 0.9rem; }
+
+        /* --- TABLES --- */
+        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+        th { text-align: left; color: var(--gray); font-size: 0.6rem; padding-bottom: 10px; text-transform: uppercase; }
+        td { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .rank { color: var(--primary); font-weight: bold; width: 20px; }
+
+        /* --- NEWS FIX --- */
+        .news-item { margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .news-item a { color: #ffffff !important; text-decoration: none; display: block; line-height: 1.6; font-size: 0.85rem; }
+        .news-item a:visited { color: #ffffff !important; }
+        .news-item a:hover { color: var(--primary) !important; }
+
+        /* --- STOCKS --- */
+        .stock-tag { display: inline-flex; align-items: center; background: var(--glass); padding: 4px 10px; border-radius: 20px; margin: 2px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1); }
+        
+        .todo-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; }
+        .completed { color: var(--gray); text-decoration: line-through; }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-grid" id="grid">
+        <!-- 1. WEATHER -->
+        <div class="widget" draggable="true" id="w-weather">
+            <div class="widget-header"><span class="section-title">Weather</span><button class="btn" onclick="updateWeather()">↻</button></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><h2 style="font-size:2.5rem; margin:0;" id="w-temp">--°</h2><div id="w-desc" style="color:var(--gray)">Loading...</div></div>
+                <div id="w-icon" style="font-size:3rem">☀️</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:auto; padding-top:15px; border-top:1px solid var(--glass);">
+                <div style="text-align:center; flex:1;">MORN<br><span id="ft-morn">--°</span></div>
+                <div style="text-align:center; flex:1;">AFT<br><span id="ft-aft">--°</span></div>
+                <div style="text-align:center; flex:1;">EVE<br><span id="ft-eve">--°</span></div>
+                <div style="text-align:center; flex:1;">TOM<br><span id="ft-tom">--°</span></div>
+            </div>
+        </div>
+
+        <!-- 2. WORLD CLOCK -->
+        <div class="widget" draggable="true" id="w-clock">
+            <div class="widget-header"><span class="section-title">World Clock 🌍</span></div>
+            <div class="local-clock-display" id="local-clock">00:00:00</div>
+            <div style="display:flex; gap:5px; margin-bottom:15px;">
+                <input type="text" id="city-input" placeholder="Search City" list="cities-list">
+                <datalist id="cities-list">
+                    <option value="Seoul"><option value="London"><option value="New York"><option value="Tokyo"><option value="Paris"><option value="Dubai"><option value="Sydney">
+                </datalist>
+                <button class="btn" onclick="addClock()">+</button>
+            </div>
+            <div id="clock-list" style="overflow-y:auto; flex:1;"></div>
+        </div>
+
+        <!-- 3. FOOTBALL CENTER -->
+        <div class="widget" draggable="true" id="w-soccer" style="min-height:500px;">
+            <div class="widget-header"><span class="section-title">Football Center ⚽</span></div>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openTab(event, 'tab-pl')">PL Table</button>
+                <button class="tab-btn" onclick="openTab(event, 'tab-ll')">LL Table</button>
+                <button class="tab-btn" onclick="openTab(event, 'tab-pls')">PL Goals</button>
+                <button class="tab-btn" onclick="openTab(event, 'tab-lls')">LL Goals</button>
+            </div>
+            <div id="tab-pl" class="tab-content active"><table><thead><tr><th>#</th><th>Team</th><th>W-D-L</th><th style="text-align:right">Pts</th></tr></thead><tbody id="pl-body"></tbody></table></div>
+            <div id="tab-ll" class="tab-content"><table><thead><tr><th>#</th><th>Team</th><th>W-D-L</th><th style="text-align:right">Pts</th></tr></thead><tbody id="ll-body"></tbody></table></div>
+            <div id="tab-pls" class="tab-content"><table><thead><tr><th>#</th><th>Player (Team)</th><th style="text-align:right">G</th></tr></thead><tbody id="pls-body"></tbody></table></div>
+            <div id="tab-lls" class="tab-content"><table><thead><tr><th>#</th><th>Player (Team)</th><th style="text-align:right">G</th></tr></thead><tbody id="lls-body"></tbody></table></div>
+        </div>
+
+        <!-- 4. WORLD NEWS (TABBED) -->
+        <div class="widget" draggable="true" id="w-world-news">
+            <div class="widget-header"><span class="section-title">World News</span><button class="btn" onclick="upWorldNews()">↻</button></div>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openNewsTab(event, 'wn-gen', 'en')">General</button>
+                <button class="tab-btn" onclick="openNewsTab(event, 'wn-eco', 'en', 'BUSINESS')">Economy</button>
+                <button class="tab-btn" onclick="openNewsTab(event, 'wn-spo', 'en', 'SPORTS')">Sports</button>
+                <button class="tab-btn" onclick="openNewsTab(event, 'wn-ent', 'en', 'ENTERTAINMENT')">Entertainment</button>
+            </div>
+            <div id="wn-list" style="overflow-y:auto; flex:1;"></div>
+        </div>
+
+        <!-- 5. KOREAN NEWS (TABBED) -->
+        <div class="widget" draggable="true" id="w-k-news">
+            <div class="widget-header"><span class="section-title">Korean News</span><button class="btn" onclick="upKNews()">↻</button></div>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openNewsTab(event, 'kn-gen', 'ko')">General</button>
+                <button class="tab-btn" onclick="openNewsTab(event, 'kn-eco', 'ko', 'BUSINESS')">Economy</button>
+                <button class="tab-btn" onclick="openNewsTab(event, 'kn-spo', 'ko', 'SPORTS')">Sports</button>
+                <button class="tab-btn" onclick="openNewsTab(event, 'kn-ent', 'ko', 'ENTERTAINMENT')">Entertainment</button>
+            </div>
+            <div id="kn-list" style="overflow-y:auto; flex:1;"></div>
+        </div>
+
+        <!-- 6. STOCKS -->
+        <div class="widget" draggable="true" id="w-stocks" style="min-height:450px;">
+            <div class="widget-header"><span class="section-title">Stocks 📈</span></div>
+            <div style="display:flex; gap:5px; margin-bottom:10px;">
+                <input type="text" id="stock-input" placeholder="Symbol" list="stocks-list" oninput="this.value = this.value.toUpperCase()">
+                <datalist id="stocks-list">
+                    <option value="NASDAQ:AAPL"><option value="NASDAQ:TSLA"><option value="NASDAQ:NVDA"><option value="NASDAQ:GOOGL"><option value="NASDAQ:NFLX">
+                    <option value="NASDAQ:MSFT"><option value="NASDAQ:AMZN"><option value="NASDAQ:META"><option value="NYSE:BABA">
+                </datalist>
+                <button class="btn" onclick="addStock()">+</button>
+            </div>
+            <div id="stock-tags" style="margin-bottom:10px;"></div>
+            <div id="tv-container" style="flex:1; min-height:300px;"></div>
+        </div>
+
+        <!-- 7. TASKS -->
+        <div class="widget" draggable="true" id="w-todo">
+            <div class="widget-header"><span class="section-title">Tasks</span></div>
+            <div style="display:flex; gap:8px; margin-bottom:10px;"><input type="text" id="todo-input" placeholder="New task..."></div>
+            <div style="overflow-y:auto; flex:1;"><ul id="todo-list" style="padding:0; list-style:none; margin:0;"></ul></div>
+        </div>
+    </div>
+
+    <script>
+        // DRAG & DROP
+        const grid = document.getElementById('grid');
+        let dragEl = null;
+        grid.addEventListener('dragstart', (e) => { if(e.target.classList.contains('widget')){ dragEl = e.target; e.target.classList.add('dragging'); }});
+        grid.addEventListener('dragend', (e) => { if(dragEl){ dragEl.classList.remove('dragging'); dragEl = null; saveOrder(); }});
+        grid.addEventListener('dragover', (e) => { e.preventDefault(); const after = getAfter(grid, e.clientX, e.clientY); if(!after) grid.appendChild(dragEl); else grid.insertBefore(dragEl, after); });
+        function getAfter(c, x, y) {
+            const els = [...c.querySelectorAll('.widget:not(.dragging)')];
+            return els.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = x - box.left - box.width/2;
+                if(offset < 0 && offset > closest.offset) return { offset, element: child };
+                else return closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        function saveOrder() { localStorage.setItem('podo-order-v19', JSON.stringify([...grid.querySelectorAll('.widget')].map(w=>w.id))); }
+        function loadOrder() { const o = JSON.parse(localStorage.getItem('podo-order-v19')); if(o) o.forEach(id => { const el = document.getElementById(id); if(el) grid.appendChild(el); }); }
+
+        // TABS
+        function openTab(e, n) {
+            let tc = e.target.parentElement.parentElement.querySelectorAll(".tab-content");
+            tc.forEach(c => c.style.display = "none");
+            let tb = e.target.parentElement.querySelectorAll(".tab-btn");
+            tb.forEach(b => b.className = b.className.replace(" active", ""));
+            document.getElementById(n).style.display = "block";
+            e.target.className += " active";
+        }
+
+        // WORLD CLOCK
+        let clocks = JSON.parse(localStorage.getItem('podo-clocks')) || [{name: 'Local', tz: Intl.DateTimeFormat().resolvedOptions().timeZone}, {name: 'Seoul', tz: 'Asia/Seoul'}];
+        function addClock() {
+            const name = document.getElementById('city-input').value;
+            const tzs = { "Seoul": "Asia/Seoul", "London": "Europe/London", "New York": "America/New_York", "Tokyo": "Asia/Tokyo", "Paris": "Europe/Paris", "Dubai": "Asia/Dubai", "Sydney": "Australia/Sydney" };
+            if(tzs[name]) { clocks.push({name, tz: tzs[name]}); renderClocks(); document.getElementById('city-input').value=''; }
+        }
+        function removeClock(idx) { clocks.splice(idx,1); renderClocks(); }
+        function renderClocks() {
+            localStorage.setItem('podo-clocks', JSON.stringify(clocks));
+            const listEl = document.getElementById('clock-list');
+            if(listEl) listEl.innerHTML = clocks.map((c,i) => `<div class="clock-item"><div><div class="clock-city">${c.name}</div></div><div style="display:flex; align-items:center; gap:10px;"><div class="clock-time" id="time-${i}">--:--:--</div><span style="color:var(--danger); cursor:pointer" onclick="removeClock(${i})">×</span></div></div>`).join('');
+        }
+        setInterval(() => {
+            const now = new Date();
+            const localClock = document.getElementById('local-clock');
+            if(localClock) localClock.innerText = now.toLocaleTimeString('en-US', {hour12:false});
+            clocks.forEach((c,i) => { const el = document.getElementById(`time-${i}`); if(el) el.innerText = now.toLocaleTimeString('en-US', {timeZone: c.tz, hour12:false}); });
+        }, 1000);
+
+        // STOCKS
+        let stocks = JSON.parse(localStorage.getItem('podo-stocks-v2')) || ["NASDAQ:AAPL", "NASDAQ:TSLA", "NASDAQ:NVDA"];
+        function addStock() { const v = document.getElementById('stock-input').value.toUpperCase(); if(v){ stocks.push(v); document.getElementById('stock-input').value=''; renderStocks(); }}
+        function removeStock(idx) { stocks.splice(idx,1); renderStocks(); }
+        function renderStocks() {
+            localStorage.setItem('podo-stocks-v2', JSON.stringify(stocks));
+            const tagsEl = document.getElementById('stock-tags');
+            if(tagsEl) tagsEl.innerHTML = stocks.map((s,i) => `<span class="stock-tag">${s}<span onclick="removeStock(${i})" style="color:var(--danger);margin-left:8px;cursor:pointer;">×</span></span>`).join('');
+            const tvEl = document.getElementById('tv-container');
+            if(tvEl) {
+                tvEl.innerHTML = '';
+                const c = document.createElement('div'); c.style.height = "100%";
+                const s = document.createElement('script'); s.src = "https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js"; s.async = true;
+                s.text = JSON.stringify({ "colorTheme": "dark", "width": "100%", "height": "100%", "isTransparent": true, "tabs": [{ "title": "Watchlist", "symbols": stocks.map(st => ({"s": st})) }] });
+                c.appendChild(s); tvEl.appendChild(c);
+            }
+        }
+
+        // FOOTBALL CENTER (15 ROWS)
+        function upSports() {
+            const pl = [{r:1,t:'Arsenal',w:16,d:5,l:3,p:53},{r:2,t:'Man City',w:14,d:5,l:5,p:47},{r:3,t:'Aston Villa',w:14,d:4,l:6,p:46},{r:4,t:'Man Utd',w:11,d:8,l:5,p:41},{r:5,t:'Chelsea',w:11,d:7,l:6,p:40},{r:6,t:'Liverpool',w:11,d:6,l:7,p:39},{r:7,t:'Brentford',w:11,d:3,l:10,p:36},{r:8,t:'Sunderland',w:9,d:9,l:6,p:36},{r:9,t:'Fulham',w:10,d:4,l:10,p:34},{r:10,t:'Everton',w:9,d:7,l:8,p:34},{r:11,t:'Newcastle',w:9,d:6,l:9,p:33},{r:12,t:'Bournemouth',w:8,d:9,l:7,p:33},{r:13,t:'Brighton',w:7,d:10,l:7,p:31},{r:14,t:'Tottenham',w:7,d:8,l:9,p:29},{r:15,t:'Crystal Palace',w:7,d:8,l:9,p:29}];
+            const ll = [{r:1,t:'Barcelona',w:18,d:1,l:3,p:55},{r:2,t:'Real Madrid',w:17,d:3,l:2,p:54},{r:3,t:'Atleti',w:13,d:6,l:3,p:45},{r:4,t:'Villarreal',w:13,d:3,l:5,p:42},{r:5,t:'Real Betis',w:9,d:8,l:5,p:35},{r:6,t:'Espanyol',w:10,d:4,l:8,p:34},{r:7,t:'Celta Vigo',w:8,d:9,l:6,p:33},{r:8,t:'Osasuna',w:8,d:5,l:10,p:29},{r:9,t:'Sociedad',w:7,d:7,l:8,p:28},{r:10,t:'Alavés',w:7,d:4,l:11,p:25},{r:11,t:'Bilbao',w:7,d:4,l:11,p:25},{r:12,t:'Girona',w:6,d:7,l:9,p:25},{r:13,t:'Elche',w:5,d:9,l:8,p:24},{r:14,t:'Mallorca',w:6,d:6,l:10,p:24},{r:15,t:'Sevilla',w:7,d:3,l:12,p:24}];
+            const pls = [{r:1,n:'Haaland',m:'City',g:20},{r:2,n:'Thiago',m:'BRE',g:16},{r:3,n:'Semenyo',m:'City',g:12},{r:4,n:'Ekitiké',m:'LFC',g:10},{r:5,n:'Calvert-Lewin',m:'Leeds',g:10},{r:6,n:'João Pedro',m:'CFC',g:9},{r:7,n:'H. Wilson',m:'Fulham',g:8},{r:8,n:'O. Watkins',m:'Villa',g:8},{r:9,n:'J. Mateta',m:'Palace',g:8},{r:10,n:'D. Welbeck',m:'BHA',g:8},{r:11,n:'P. Foden',m:'City',g:7},{r:12,n:'Richarlison',m:'Spurs',g:7},{r:13,n:'V. Gyökeres',m:'ARS',g:6},{r:14,n:'M. Cunha',m:'MUFC',g:6},{r:15,n:'Pedro Neto',m:'CFC',g:5}];
+            const lls = [{r:1,n:'Mbappé',m:'RMA',g:22},{r:2,n:'V. Muriqi',m:'MLL',g:15},{r:3,n:'F. Torres',m:'BAR',g:12},{r:4,n:'Budimir',m:'OSA',g:11},{r:5,n:'Yamal',m:'BAR',g:9},{r:6,n:'Lewandowski',m:'BAR',g:9},{r:7,n:'B. Iglesias',m:'CEL',g:9},{r:8,n:'Raphinha',m:'BAR',g:8},{r:9,n:'Oyarzabal',m:'RSO',g:8},{r:10,n:'Moleiro',m:'VIL',g:8},{r:11,n:'Hugo Duro',m:'VAL',g:7},{r:12,n:'A. Sørloth',m:'ATM',g:7},{r:13,n:'de Frutos',m:'RAY',g:7},{r:14,n:'Vinícius Jr',m:'RMA',g:6},{r:15,n:'Dani Olmo',m:'BAR',g:6}];
+            
+            const render = (id, d, f) => { const el = document.getElementById(id); if(el) el.innerHTML = d.map(f).join(''); };
+            render('pl-body', pl, s => `<tr><td class="rank">${s.r}</td><td>${s.t}</td><td>${s.w}-${s.d}-${s.l}</td><td style="text-align:right">${s.p}</td></tr>`);
+            render('ll-body', ll, s => `<tr><td class="rank">${s.r}</td><td>${s.t}</td><td>${s.w}-${s.d}-${s.l}</td><td style="text-align:right">${s.p}</td></tr>`);
+            render('pls-body', pls, s => `<tr><td class="rank">${s.r}</td><td>${s.n} <span style="color:var(--gray);font-size:0.6rem">(${s.m})</span></td><td style="text-align:right">${s.g}</td></tr>`);
+            render('lls-body', lls, s => `<tr><td class="rank">${s.r}</td><td>${s.n} <span style="color:var(--gray);font-size:0.6rem">(${s.m})</span></td><td style="text-align:right">${s.g}</td></tr>`);
+        }
+
+        // NEWS FETCHING
+        async function openNewsTab(e, n, lang, topic = "") {
+            let tb = e.target.parentElement.querySelectorAll(".tab-btn");
+            tb.forEach(b => b.className = b.className.replace(" active", ""));
+            e.target.className += " active";
+            const listId = lang === 'ko' ? 'kn-list' : 'wn-list';
+            fetchNews(listId, lang, topic);
+        }
+
+        async function fetchNews(listId, lang, topic = "") {
+            try {
+                const url = topic ? `https://news.google.com/rss/headlines/section/topic/${topic}?hl=${lang === 'ko' ? 'ko&gl=KR&ceid=KR:ko' : 'en-US&gl=US&ceid=US:en'}` : `https://news.google.com/rss?hl=${lang === 'ko' ? 'ko&gl=KR&ceid=KR:ko' : 'en-US&gl=US&ceid=US:en'}`;
+                const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`);
+                const d = await r.json();
+                const listEl = document.getElementById(listId);
+                if(listEl) listEl.innerHTML = d.items.slice(0, 12).map(n => `<div class="news-item"><a href="${n.link}" target="_blank">${n.title}</a></div>`).join('');
+            } catch(e) { const listEl = document.getElementById(listId); if(listEl) listEl.innerText = "Error loading news."; }
+        }
+
+        async function updateWeather() {
+            try {
+                const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=49.2827&longitude=-123.1207&hourly=temperature_2m&current_weather=true&daily=temperature_2m_max&timezone=auto');
+                const d = await r.json();
+                const tempEl = document.getElementById('w-temp');
+                if(tempEl) tempEl.innerText = Math.round(d.current_weather.temperature) + '°';
+                const mornEl = document.getElementById('ft-morn'); if(mornEl) mornEl.innerText = Math.round(d.hourly.temperature_2m[9]) + '°';
+                const aftEl = document.getElementById('ft-aft'); if(aftEl) aftEl.innerText = Math.round(d.hourly.temperature_2m[14]) + '°';
+                const eveEl = document.getElementById('ft-eve'); if(eveEl) eveEl.innerText = Math.round(d.hourly.temperature_2m[20]) + '°';
+                const tomEl = document.getElementById('ft-tom'); if(tomEl) tomEl.innerText = Math.round(d.daily.temperature_2m_max[1]) + '°';
+            } catch(e) {}
+        }
+
+        let todos = JSON.parse(localStorage.getItem('podo-v19-todos')) || [];
+        function renderT() {
+            const listEl = document.getElementById('todo-list');
+            if(listEl) listEl.innerHTML = todos.map((t, i) => `<li class="todo-item"><input type="checkbox" ${t.done?'checked':''} onclick="toggle(${i})"><span style="flex:1; cursor:pointer; margin-left:10px" class="${t.done?'completed':''}" onclick="toggle(${i})">${t.text}</span><button onclick="del(${i})" style="background:none;border:none;color:#444;cursor:pointer;">×</button></li>`).join('');
+            localStorage.setItem('podo-v19-todos', JSON.stringify(todos));
+        }
+        window.toggle = (i) => { todos[i].done = !todos[i].done; renderT(); };
+        window.del = (i) => { todos.splice(i, 1); renderT(); };
+        const todoInput = document.getElementById('todo-input');
+        if(todoInput) todoInput.onkeypress = (e) => { if(e.key === 'Enter' && e.target.value.trim()){ todos.push({text:e.target.value.trim(), done:false}); e.target.value=''; renderT(); }};
+
+        loadOrder(); renderClocks(); renderStocks(); updateWeather(); upSports(); fetchNews('wn-list', 'en'); fetchNews('kn-list', 'ko'); renderT();
+    </script>
+</body>
+</html>
